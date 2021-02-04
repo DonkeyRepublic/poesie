@@ -46,13 +46,18 @@ module Poesie
           definition = definition["one"] || definition.values.first
         end
 
+        if comment.empty?
+          comment = "No comment provided by engineer."
+        end
+
         definition = Poesie::process(definition, substitutions)
                     .gsub("\u2028", '') # Sometimes inserted by the POEditor exporter
                     .gsub("\n", '\n') # Replace actual CRLF with '\n'
                     .gsub('"', '\\"') # Escape quotes
-                    .gsub(/\{(\d?)\{.*?\}\}/, '%\\1$s').gsub("%$s", "%1$s") # Replace human-readable parameters with %s's
+                    .gsub(/\{(\d?)\{.*?\}\}/, '%\\1$s').gsub("%$s", "%s") # Replace human-readable parameters with %s's
                     .gsub(/%(\d+\$)?s/, '%\1@') # replace %s with %@ for iOS
         out_lines << %Q(// CONTEXT: #{context.gsub("\n", '\n')}) unless context.empty?
+        out_lines << %Q(// #{comment.gsub("\n", '\n')})
         out_lines << %Q("#{term}" = "#{definition}";)
       end
 
