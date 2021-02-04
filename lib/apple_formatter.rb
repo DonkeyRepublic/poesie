@@ -52,6 +52,7 @@ module Poesie
                     .gsub('"', '\\"') # Escape quotes
                     .gsub(/%(\d+\$)?s/, '%\1@') # replace %s with %@ for iOS
         out_lines << %Q(// CONTEXT: #{context.gsub("\n", '\n')}) unless context.empty?
+        out_lines << %Q(// #{comment.gsub("\n", '\n')}) unless comment.empty?
         out_lines << %Q("#{term}" = "#{definition}";)
       end
 
