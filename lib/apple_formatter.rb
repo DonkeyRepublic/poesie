@@ -54,8 +54,14 @@ module Poesie
                     .gsub("\u2028", '') # Sometimes inserted by the POEditor exporter
                     .gsub("\n", '\n') # Replace actual CRLF with '\n'
                     .gsub('"', '\\"') # Escape quotes
-                    .gsub(/\{(\d?)\{.*?\}\}/, '%\\1$s').gsub("%$s", "%s") # Replace human-readable parameters with %s's
-                    .gsub(/%(\d+\$)?s/, '%\1@') # replace %s with %@ for iOS
+                    .gsub(/\{(\d?)\{.*?\}\}/, '%\\1$s') # Replace human-readable parameters with %s's
+
+        i = 0
+        while /%\$s/.match(definition)
+          definition.sub!(/%\$s/) { i+=1; "%#{i}$s" }
+        end
+
+        definition.gsub!(/%(\d+\$)?s/, '%\1@') # replace %s with %@ for iOS
         out_lines << %Q(// CONTEXT: #{context.gsub("\n", '\n')}) unless context.empty?
         out_lines << %Q(// #{comment.gsub("\n", '\n')})
         out_lines << %Q("#{term}" = "#{definition}";)
