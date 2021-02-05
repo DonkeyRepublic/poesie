@@ -42,7 +42,9 @@ module Poesie
 
             xml_builder.comment!(context) unless context.empty?
             if plurals.empty?
-              definition = Poesie::process(definition, substitutions).gsub('"', '\\"')
+              definition = Poesie::process(definition, substitutions)
+                .gsub('"', '\\"')
+                .gsub(/\{(\d?)\{.*?\}\}/, '%\\1$s').gsub("%$s", "%1$s") # Replace human-readable parameters with %s's
               resources_node.string("\"#{definition}\"", :name => term)
             else
               resources_node.plurals(:name => plurals) do |plurals_node|
