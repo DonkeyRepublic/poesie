@@ -21,10 +21,12 @@ module Poesie
       stats = { :excluded => 0, :nil => [], :count => 0 }
       output_files = {}
 
+      language_code = %r(/(.*)\.lproj/).match(language)[1]
+
       terms.each do |term|
         (term, definition, comment, context) = ['term', 'definition', 'comment', 'context'].map { |k| term[k] }
 
-        file_path = context.sub('en.lproj', "#{language}.lproj")
+        file_path = context.sub('en.lproj', "#{language_code}.lproj")
         out_lines = output_files[file_path] || self.file_header(print_date)
         output_files[file_path] = out_lines
 
@@ -49,10 +51,10 @@ module Poesie
         out_lines << ''
       end
 
-      output_files.each do |context, content|
-        Log::info(" - Save to file: #{context}")
-        FileUtils.mkdir_p(File.dirname(context))
-        File.open(context, "w") do |fh|
+      output_files.each do |file_path, content|
+        Log::info(" - Save to file: #{file_path}")
+        FileUtils.mkdir_p(File.dirname(file_path))
+        File.open(file_path, "w") do |fh|
           fh.write(content.join("\n"))
         end
       end
