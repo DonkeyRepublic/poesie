@@ -7,8 +7,8 @@ module Poesie
     #
     # @param [Array<Hash<String, Any>>] terms
     #        JSON returned by the POEditor API
-    # @param [String] file
-    #        The path of the file to write
+    # @param [String] language
+    #        The language of the translation
     # @param [Hash<String,String>] substitutions
     #        The list of substitutions to apply to the translations
     # @param [Bool] print_date
@@ -17,28 +17,21 @@ module Poesie
     #        A regular expression to filter out terms.
     #        Terms matching this Regexp will be ignored and won't be part of the generated file
     #
-    def self.write_strings_file(terms, file, substitutions: nil, print_date: false, exclude: Poesie::Filters::EXCLUDE_ANDROID)
-      out_lines = ['/'+'*'*79, ' * Exported from POEditor - https://poeditor.com']
-      out_lines << " * #{Time.now}" if print_date
-      out_lines += [' '+'*'*79+'/', '']
-      last_prefix = ''
+    def self.write_strings_file(terms, language, substitutions: nil, print_date: false, exclude: Poesie::Filters::EXCLUDE_ANDROID)
       stats = { :excluded => 0, :nil => [], :count => 0 }
+      output_files = {}
 
       terms.each do |term|
         (term, definition, comment, context) = ['term', 'definition', 'comment', 'context'].map { |k| term[k] }
+
+        file_path = context.sub('en.lproj', "#{language}.lproj")
+        out_lines = output_files[file_path] || self.file_header(print_date)
+        output_files[file_path] = out_lines
 
         # Filter terms and update stats
         next if (term.nil? || term.empty? || definition.nil? || definition.empty?) && stats[:nil] << term
         next if (term =~ exclude) && stats[:excluded] += 1
         stats[:count] += 1
-
-        # Generate MARK from prefixes
-        prefix = %r(([^_]*)_.*).match(term)
-        if prefix && prefix[1] != last_prefix
-          last_prefix = prefix[1]
-          mark = last_prefix[0].upcase + last_prefix[1..-1].downcase
-          out_lines += ['', '/'*80, "// MARK: #{mark}"]
-        end
 
         # If definition is a Hash, use the text for "one" if available (singular in languages using plurals)
         # otherwise (e.g. asian language where only key in hash will be "other", not "one"), then use the first entry
@@ -51,17 +44,19 @@ module Poesie
                     .gsub("\n", '\n') # Replace actual CRLF with '\n'
                     .gsub('"', '\\"') # Escape quotes
                     .gsub(/%(\d+\$)?s/, '%\1@') # replace %s with %@ for iOS
-        out_lines << %Q(// CONTEXT: #{context.gsub("\n", '\n')}) unless context.empty?
-        out_lines << %Q(// #{comment.gsub("\n", '\n')}) unless comment.empty?
+        out_lines << %Q(/* #{comment.gsub("\n", '\n')} */) unless comment.empty?
         out_lines << %Q("#{term}" = "#{definition}";)
+        out_lines << ''
       end
 
-      content = out_lines.join("\n") + "\n"
-
-      Log::info(" - Save to file: #{file}")
-      File.open(file, "w") do |fh|
-        fh.write(content)
+      output_files.each do |context, content|
+        Log::info(" - Save to file: #{context}")
+        FileUtils.mkdir_p(File.dirname(context))
+        File.open(context, "w") do |fh|
+          fh.write(content.join("\n"))
+        end
       end
+
       Log::info("   [Stats] #{stats[:count]} strings processed")
       unless exclude.nil?
         Log::info("   Filtered out #{stats[:excluded]} strings matching #{exclude.inspect})")
@@ -145,5 +140,15 @@ module Poesie
         stats[:nil].each { |key| Log::error("    - #{key.inspect}") }
       end
     end
+
+    private
+
+    def self.file_header(print_date)
+      out_lines = ['/'+'*'*79, ' * Exported from POEditor - https://poeditor.com']
+      out_lines << " * #{Time.now}" if print_date
+      out_lines += [' '+'*'*79+'/', '']
+      return out_lines
+    end
+
   end
 end

@@ -91,7 +91,7 @@ exporter.run(options[:lang]) do |terms|
     # Localizable.strings
     Poesie::AppleFormatter::write_strings_file(
       terms,
-      options[:localizable_strings],
+      options[:lang],
       substitutions: options[:substitutions],
       print_date: options[:print_date]
     )
