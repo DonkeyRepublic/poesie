@@ -39,6 +39,8 @@ module Poesie
             # Terms with dots are invalid in Android ("R.string.foo.bar" won't work), so replace dots with underscores
             term.gsub!('.', '_')
             plurals.gsub!('.', '_')
+            
+            term.gsub!('_android', '')
 
             xml_builder.comment!(context) unless context.empty?
             if plurals.empty?
