@@ -40,7 +40,9 @@ module Poesie
             term.gsub!('.', '_')
             plurals.gsub!('.', '_')
             
+            # _android suffix should be removed from all terms
             term.gsub!('_android', '')
+            plurals.gsub!('_android', '')
 
             xml_builder.comment!(context) unless context.empty?
             if plurals.empty?
